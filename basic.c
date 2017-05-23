@@ -5,51 +5,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-
 #define PIPE_BUF 20
-#define N_EVENTS 200
-
-
-
-//struct to save data regarding the nodes
-typedef struct node *NodeList;
-struct node {
-  int id;
-  char *cmd;
-  char *args[10]; //numero maximo de argumentos de um comando (VER)
-  int nargs;
-  pid_t pid;
-};
-
-NodeList nodes[N_EVENTS]; //declaration of the global structure for nodes
-
-//This function creates a new list of nodes
-void initNodeList(){
-  int i;
-  for(i=0;i<N_EVENTS;i++)
-    nodes[i] = NULL;
-}
-
-
-void newNodeList(int id, char *cmd, char **args, int n, pid_t pid){
-  int j=0;
-  NodeList aux;
-  while(nodes[j]!=NULL)
-    j++;
-  aux = (NodeList) malloc (sizeof(struct node));
-  int i;
-  aux->id = id;
-  aux->cmd = strdup(cmd);
-  for(i=0;i<n;i++){
-    aux->args[i] = strdup(args[i]);
-  }
-  aux->nargs = n;
-  aux->pid = pid;
-  nodes[j] = aux;
-}
-
-
-
 
 // Auxilixar function to window
 int avg(int inteiro[], int size){
@@ -356,47 +312,11 @@ void spawn(int argc, char **argv){
   }
 }
 
-void node(int argc, char **argv) {
-  char *arg[argc], *cmd;
-  int id, i;
-  if (!fork()){
-    if (argc<2) printf("Error! Not enough arguments\n"); //o argc tem de ser mais que 2
-    else {
-      id = atoi(argv[0]);
-      cmd = (char *) malloc (sizeof(char)*15);
-      cmd = strdup(argv[1]);
-      for(i=0;i<argc-2;i++)
-          arg[i] = strdup(argv[i+2]);
-      pid_t p = getpid();
-      newNodeList(id,cmd,arg,i,p);
-    }
-  }
-  else {
-    int status;
-    wait(&status);
-    exit(0);
-  }
-}
-
-
 int main(int argc, char **argv){
-  int r, narg;
-  char buf[51], *cmd, *del=" ", *token, *arg[20];
-  initNodeList();
   //cons(argv[1]);
   //window(argv[1], argv[2], argv[3]);
   //filter(argv[1], argv[2], argv[3]);
   //grep(argv[1], argv[2]);
-  //spawn(argc, argv);
-  while((r=(readln(0, buf, 50)))) {
-    narg=0;
-    cmd = strtok(buf, del);
-    while(((token = strtok(NULL, del)) != NULL)) {
-      arg[narg++] = token;
-    }
-    if (!(strcmp(cmd, "node")))
-      node(narg, arg);
-  }
-  printf("%s\n", nodes[1]->cmd);
+  spawn(argc, argv);
   return 0;
 }
