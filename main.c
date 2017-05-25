@@ -363,9 +363,9 @@ void node(int argc, char **argv) {
       char *strtmp = malloc (length + 1);
       snprintf (strtmp, length + 1, "%d", id);
       f = open(strtmp, O_RDONLY);
-      while((r=(readln(0, buf, 128)))){
-        printf("AQUI");
-      }
+      while(1)
+        if ((r=(readln(f, buf, 128))))
+          printf("AQUI");
     }
   }
   else {
