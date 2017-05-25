@@ -376,28 +376,22 @@ void node(int argc, char **argv) {
 }
 
 void funout(int argc, char **argv){
-  int pd[2];
-	pipe(pd);
-	if(!fork()) {
-		dup2(pd[1],1);
-		close(pd[1]);
-    close(pd[0]);
-		execlp(argv[1], argv[1], NULL);
-    //exit(0);
-	}
-	else {
-    dup2(pd[0],0);
-    close(pd[0]);
-    for(int i=2; i<argc; i++) {
-      if(!fork()){
-        //dup2(pd[0],0);
-    		//close(pd[0]);
-        close(pd[1]);
-    		execlp(argv[i], argv[i], NULL);
-        //exit(0);
-      }
+  for(int i=2; i<argc; i++) {
+    int pd[2];
+    pipe(pd);
+    if(!fork()) {
+      dup2(pd[1],1);
+      close(pd[1]);
+      close(pd[0]);
+      execlp(argv[1], argv[1], NULL);
     }
-	}
+    if(!fork()) {
+      dup2(pd[0],0);
+      close(pd[0]);
+      close(pd[1]);
+      execlp(argv[i], argv[i], NULL);
+    }
+  }
 }
 
 int main(int argc, char **argv){
