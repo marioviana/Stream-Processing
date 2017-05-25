@@ -318,8 +318,8 @@ void funout(int argc, char **argv){
 	if(!fork()) {
 		dup2(pd[1],1);
 		close(pd[1]);
-		execlp(argv[1], argv[1], NULL);
     close(pd[0]);
+		execlp(argv[1], argv[1], NULL);
     exit(0);
 	}
 	else {
@@ -327,9 +327,9 @@ void funout(int argc, char **argv){
     //wait(&status);
 		dup2(pd[0],0);
 		close(pd[0]);
-		execlp(argv[2], argv[2], NULL);
     close(pd[1]);
-    exit(0);
+		execlp(argv[2], argv[2], NULL);
+    //close(pd[0]);
 	}
 }
 
