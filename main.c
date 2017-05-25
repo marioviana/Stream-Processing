@@ -394,16 +394,35 @@ void funout(int argc, char **argv){
   }
 }
 
+void funin(int argc, char **argv){
+  for(int i=1; i<argc-1; i++) {
+    int pd[2];
+    pipe(pd);
+    if(!fork()) {
+      dup2(pd[1],1);
+      close(pd[1]);
+      close(pd[0]);
+      execlp(argv[i], argv[i], NULL);
+    }
+    if(!fork()) {
+      dup2(pd[0],0);
+      close(pd[0]);
+      close(pd[1]);
+      execlp(argv[argc-1], argv[argc-1], NULL);
+    }
+  }
+}
+
 int main(int argc, char **argv){
-  /*int r, narg;
+  int r, narg;
   char buf[51], *cmd, *del=" ", *token, *arg[20];
-  initNodeList();*/
+  initNodeList();
   /*cons(argv[1]);
   window(argv[1], argv[2], argv[3]);
   filter(argv[1], argv[2], argv[3]);
   grep(argv[1], argv[2]);
   spawn(argc, argv);*/
-  /*while((r=(readln(0, buf, 50)))) {
+  while((r=(readln(0, buf, 50)))) {
     narg=0;
     cmd = strtok(buf, del);
     while(((token = strtok(NULL, del)) != NULL)) {
@@ -412,7 +431,6 @@ int main(int argc, char **argv){
     if (!(strcmp(cmd, "node")))
       node(narg, arg);
   }
-  printf("%s\n", nodes[1]->cmd);*/
-  funout(argc, argv);
+  printf("%s\n", nodes[1]->cmd);
   return 0;
 }
