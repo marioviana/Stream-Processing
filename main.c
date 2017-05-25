@@ -2,113 +2,103 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <fcntl.h>
-
+#include <sys/wait.h>
+#include <sys/stat.h>
 
 #define PIPE_BUF 20
 #define N_EVENTS 200
 
+/* Struct to save data regarding the nodes */
+typedef struct node {
+  int id;         /* id/number of the node */
+  char *cmd;      /* the name of the command to execute in this node */
+  char *args[10]; /* the arguments of the command, with 10 being the max number of arguments */
+  int nargs;      /* number of arguments in args */
+  pid_t pid;      /* pid of the process */
+} *NodeList;
 
+/* declaration of the global structure for nodes */
+NodeList nodes[N_EVENTS];
 
-//struct to save data regarding the nodes
-typedef struct node *NodeList;
-struct node {
-  int id;
-  char *cmd;
-  char *args[10]; //numero maximo de argumentos de um comando (VER)
-  int nargs;
-  pid_t pid;
-};
-
-NodeList nodes[N_EVENTS]; //declaration of the global structure for nodes
-
-//This function creates a new list of nodes
+/* This function creates a new list of nodes */
 void initNodeList(){
-  int i;
-  for(i=0;i<N_EVENTS;i++)
+  for(int i=0; i<N_EVENTS; i++)
     nodes[i] = NULL;
 }
 
-
+/* Create a new node with id, cmd, args, n and pid and append it to our array of nodes*/
 void newNodeList(int id, char *cmd, char **args, int n, pid_t pid){
-  int j=0;
-  NodeList aux;
-  while(nodes[j]!=NULL)
-    j++;
-  aux = (NodeList) malloc (sizeof(struct node));
-  int i;
+  int j,i;
+  for(j=0; nodes[j] != NULL; j++){}
+  NodeList aux = (NodeList) malloc (sizeof(struct node));
   aux->id = id;
   aux->cmd = strdup(cmd);
-  for(i=0;i<n;i++){
+  for(i=0; i<n; i++)
     aux->args[i] = strdup(args[i]);
-  }
   aux->nargs = n;
   aux->pid = pid;
   nodes[j] = aux;
+  int length = snprintf( NULL, 0, "%d", id );
+  char *strtmp = malloc (length + 1);
+  snprintf (strtmp, length + 1, "%d", id);
+  mkfifo(strtmp, 0666);
 }
 
-
-
-
-// Auxilixar function to window
+/* Auxilixar function to window */
 int avg(int inteiro[], int size){
   int i, total=0;
-  for(i=0; i<size; i++){
+  for(i=0; i<size; i++)
     total += inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return (total/size);
 }
 
-// Auxilixar function to window
+/* Auxilixar function to window */
 int sum(int inteiro[], int size){
   int i, total=0;
-  for(i=0; i<size; i++){
+  for(i=0; i<size; i++)
     total += inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return total;
 }
 
-// Auxilixar function to window
+/* Auxilixar function to window */
 int max(int inteiro[], int size){
   int i, max=inteiro[0];
-  for(i=1; i<size; i++){
+  for(i=1; i<size; i++)
     if (inteiro[i]>max)
       max = inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return max;
 }
 
-// Auxilixar function to window
+/* Auxilixar function to window */
 int min(int inteiro[], int size){
   int i, min=inteiro[0];
-  for(i=1; i<size; i++){
+  for(i=1; i<size; i++)
     if (inteiro[i]<min)
       min = inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return min;
 }
 
-// Auxiliar function to spawn
+/* Auxiliar function to spawn */
 void remove_element(char **array, int index, int array_length) {
-   int i;
-   for(i = index; i < array_length - 1; i++)
+  int i;
+  for(i = index; i < array_length - 1; i++)
     array[i] = array[i + 1];
 }
 
-// Auxiliar function to read line
+/* Auxiliar function to read line */
 ssize_t readln(int fld, char *buf, size_t nbyte){
   int i=0;
   while ((read(fld,buf+i,1)>0) && i<nbyte && (buf[i]!='\n'))
@@ -357,8 +347,8 @@ void spawn(int argc, char **argv){
 }
 
 void node(int argc, char **argv) {
-  char *arg[argc], *cmd;
-  int id, i;
+  char *arg[argc], *cmd, *buf=NULL;
+  int r, id, i, f;
   if (!fork()){
     if (argc<2) printf("Error! Not enough arguments\n"); //o argc tem de ser mais que 2
     else {
@@ -366,9 +356,16 @@ void node(int argc, char **argv) {
       cmd = (char *) malloc (sizeof(char)*15);
       cmd = strdup(argv[1]);
       for(i=0;i<argc-2;i++)
-          arg[i] = strdup(argv[i+2]);
+        arg[i] = strdup(argv[i+2]);
       pid_t p = getpid();
       newNodeList(id,cmd,arg,i,p);
+      int length = snprintf( NULL, 0, "%d", id );
+      char *strtmp = malloc (length + 1);
+      snprintf (strtmp, length + 1, "%d", id);
+      f = open(strtmp, O_RDONLY);
+      while((r=(readln(0, buf, 128)))){
+        printf("AQUI");
+      }
     }
   }
   else {
@@ -378,16 +375,19 @@ void node(int argc, char **argv) {
   }
 }
 
+/*void funout(int argc, char **argv){
+
+}*/
 
 int main(int argc, char **argv){
   int r, narg;
   char buf[51], *cmd, *del=" ", *token, *arg[20];
   initNodeList();
-  //cons(argv[1]);
-  //window(argv[1], argv[2], argv[3]);
-  //filter(argv[1], argv[2], argv[3]);
-  //grep(argv[1], argv[2]);
-  //spawn(argc, argv);
+  /*cons(argv[1]);
+  window(argv[1], argv[2], argv[3]);
+  filter(argv[1], argv[2], argv[3]);
+  grep(argv[1], argv[2]);
+  spawn(argc, argv);*/
   while((r=(readln(0, buf, 50)))) {
     narg=0;
     cmd = strtok(buf, del);
