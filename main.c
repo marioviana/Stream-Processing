@@ -375,20 +375,45 @@ void node(int argc, char **argv) {
   }
 }
 
-/*void funout(int argc, char **argv){
-
-}*/
+void funout(int argc, char **argv){
+  int fd[2];
+  pipe(fd);
+  if(!fork()){
+    dup2(fd[0], 0); /* Mudar std input para o descriptor de fd[0] */
+    close(fd[1]);   /* Fechar output do filho */
+    execlp(argv[1], argv[1], NULL);
+    close(fd[0]);   /* Fechar input do filho */
+    exit(0);
+  }
+  else {
+    wait(NULL);
+    for(int i=2; i<argc; i++) {
+      if(!fork()){
+        dup2(fd[1], 1); /* Mudar std ouput para o output do pipe */
+        close(fd[0]);   /* Fechar o input do pai */
+        execlp(argv[i], argv[i], NULL);
+        close(fd[1]);   /* Fechar o output do pai */
+        exit(0);
+      }
+      else {
+        int status;
+        wait(&status);
+        exit(0);
+      }
+    }
+  }
+}
 
 int main(int argc, char **argv){
-  int r, narg;
+  /*int r, narg;
   char buf[51], *cmd, *del=" ", *token, *arg[20];
-  initNodeList();
+  initNodeList();*/
   /*cons(argv[1]);
   window(argv[1], argv[2], argv[3]);
   filter(argv[1], argv[2], argv[3]);
   grep(argv[1], argv[2]);
   spawn(argc, argv);*/
-  while((r=(readln(0, buf, 50)))) {
+  /*while((r=(readln(0, buf, 50)))) {
     narg=0;
     cmd = strtok(buf, del);
     while(((token = strtok(NULL, del)) != NULL)) {
@@ -397,6 +422,7 @@ int main(int argc, char **argv){
     if (!(strcmp(cmd, "node")))
       node(narg, arg);
   }
-  printf("%s\n", nodes[1]->cmd);
+  printf("%s\n", nodes[1]->cmd);*/
+  funout(argc, argv);
   return 0;
 }
