@@ -312,11 +312,33 @@ void spawn(int argc, char **argv){
   }
 }
 
+void funout(int argc, char **argv){
+  int pd[2];
+	pipe(pd);
+	if(!fork()) {
+		dup2(pd[1],1);
+		close(pd[1]);
+		execlp(argv[1], argv[1], NULL);
+    close(pd[0]);
+    exit(0);
+	}
+	else {
+    //int status;
+    //wait(&status);
+		dup2(pd[0],0);
+		close(pd[0]);
+		execlp(argv[2], argv[2], NULL);
+    close(pd[1]);
+    exit(0);
+	}
+}
+
 int main(int argc, char **argv){
   //cons(argv[1]);
   //window(argv[1], argv[2], argv[3]);
   //filter(argv[1], argv[2], argv[3]);
   //grep(argv[1], argv[2]);
-  spawn(argc, argv);
+  //spawn(argc, argv);
+  funout(argc, argv);
   return 0;
 }

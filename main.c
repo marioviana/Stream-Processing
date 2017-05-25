@@ -376,32 +376,33 @@ void node(int argc, char **argv) {
 }
 
 void funout(int argc, char **argv){
-  int fd[2];
-  pipe(fd);
-  if(!fork()){
-    dup2(fd[0], 0); /* Mudar std input para o descriptor de fd[0] */
-    close(fd[1]);   /* Fechar output do filho */
-    execlp(argv[1], argv[1], NULL);
-    close(fd[0]);   /* Fechar input do filho */
+  int pd[2];
+	pipe(pd);
+	if(!fork()) {
+		dup2(pd[1],1);
+		close(pd[1]);
+		execlp(argv[1], argv[1], NULL);
+    close(pd[0]);
     exit(0);
-  }
-  else {
-    wait(NULL);
+	}
+	else {
+    //int status;
+    //wait(&status);
     for(int i=2; i<argc; i++) {
       if(!fork()){
-        dup2(fd[1], 1); /* Mudar std ouput para o output do pipe */
-        close(fd[0]);   /* Fechar o input do pai */
-        execlp(argv[i], argv[i], NULL);
-        close(fd[1]);   /* Fechar o output do pai */
+        dup2(pd[0],0);
+    		close(pd[0]);
+    		execlp(argv[i], argv[i], NULL);
+        close(pd[1]);
         exit(0);
       }
-      else {
+      /*else {
         int status;
         wait(&status);
         exit(0);
-      }
+      }*/
     }
-  }
+	}
 }
 
 int main(int argc, char **argv){
