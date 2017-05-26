@@ -6,8 +6,8 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-#define PIPE_BUF 20
-#define N_EVENTS 200
+#define PIPE_BUF 50   /* Maximum length of event */
+#define N_EVENTS 200  /* Maximum number of nodes in the struct */
 
 /* Struct to save data regarding the nodes */
 typedef struct node {
@@ -45,7 +45,7 @@ void newNodeList(int id, char *cmd, char **args, int n, pid_t pid){
   mkfifo(strtmp, 0666);
 }
 
-/* Auxilixar function to window */
+/* Auxilixar function to calculate average of int array for window function */
 int avg(int inteiro[], int size){
   int i, total=0;
   for(i=0; i<size; i++)
@@ -56,7 +56,7 @@ int avg(int inteiro[], int size){
     return (total/size);
 }
 
-/* Auxilixar function to window */
+/* Auxilixar function to calculate sum of int array for window function */
 int sum(int inteiro[], int size){
   int i, total=0;
   for(i=0; i<size; i++)
@@ -67,7 +67,7 @@ int sum(int inteiro[], int size){
     return total;
 }
 
-/* Auxilixar function to window */
+/* Auxilixar function to calculate max of int array for window function */
 int max(int inteiro[], int size){
   int i, max=inteiro[0];
   for(i=1; i<size; i++)
@@ -79,7 +79,7 @@ int max(int inteiro[], int size){
     return max;
 }
 
-/* Auxilixar function to window */
+/* Auxilixar function to calculate min of int array for window function */
 int min(int inteiro[], int size){
   int i, min=inteiro[0];
   for(i=1; i<size; i++)
@@ -91,7 +91,7 @@ int min(int inteiro[], int size){
     return min;
 }
 
-/* Auxiliar function to spawn */
+/* Auxiliar function to remove an element from an array for spawn function */
 void remove_element(char **array, int index, int array_length) {
   int i;
   for(i = index; i < array_length - 1; i++)
@@ -107,6 +107,7 @@ ssize_t readln(int fld, char *buf, size_t nbyte){
   return i;
 }
 
+/* Const component: const <value> */
 void cons(char *value){
   int r; char buf[PIPE_BUF+1];
   while((r=(readln(0, buf, PIPE_BUF)))) {
@@ -123,6 +124,7 @@ void cons(char *value){
   }
 }
 
+/* Window component: window <column> <operation> <lines> */
 void window(char *col, char *op, char *lines){
   int result, a, i, r, loop=0, before[atoi(lines)];
   for (i=0; i<atoi(lines); i++)
@@ -202,6 +204,7 @@ void window(char *col, char *op, char *lines){
   }
 }
 
+/* Filter component: filter <column> <operation> <integer> */
 void filter(char *value1, char *operation, char *value2) {
   int i, r, v1, v2, v3, c1, c2;
   char buf[PIPE_BUF+1], *aux[PIPE_BUF+1], bufcpy[PIPE_BUF+1];
@@ -268,6 +271,7 @@ void filter(char *value1, char *operation, char *value2) {
   }
 }
 
+/* Grep component: grep <column> <value> */
 void grep(char *col, char *search){
   int a, r;
   char buf[PIPE_BUF+1], bufcpy[PIPE_BUF+1], *del=":", *token;
@@ -286,6 +290,7 @@ void grep(char *col, char *search){
   }
 }
 
+/* Window component: spawn <command> <args...> */
 void spawn(int argc, char **argv){
   int x=0, a, i, r, arg[argc], trash[argc]; arg[0]=0;
   char buf[PIPE_BUF+1], bufcpy[PIPE_BUF+1], *del=":", *token, *statusS=NULL;
@@ -366,12 +371,26 @@ void node(int argc, char **argv) {
       while(1)
         if ((r=(readln(f, buf, 128))))
           printf("AQUI");
+      _exit(1);
     }
   }
   else {
     int status;
     wait(&status);
     exit(0);
+  }
+}
+
+void inject (int argc, char **argv) {
+  int r, f, file, id = atoi(argv[1]), length = snprintf( NULL, 0, "%d", id );
+  char *strtmp = malloc (length + 1), buf[PIPE_BUF];
+  snprintf (strtmp, length + 1, "%d", id);
+  f = open(strtmp, O_RDONLY);
+  if (!strcmp(argv[2], "cat")) {
+    file = open(argv[3], O_RDONLY);
+    while ((r=(readln(file, buf, PIPE_BUF)))) {
+      write(f, buf, r);
+    }
   }
 }
 
@@ -384,12 +403,14 @@ void funout(int argc, char **argv){
       close(pd[1]);
       close(pd[0]);
       execlp(argv[1], argv[1], NULL);
+      _exit(1);
     }
     if(!fork()) {
       dup2(pd[0],0);
       close(pd[0]);
       close(pd[1]);
       execlp(argv[i], argv[i], NULL);
+      _exit(1);
     }
   }
 }
@@ -417,20 +438,15 @@ int main(int argc, char **argv){
   int r, narg;
   char buf[51], *cmd, *del=" ", *token, *arg[20];
   initNodeList();
-  /*cons(argv[1]);
-  window(argv[1], argv[2], argv[3]);
-  filter(argv[1], argv[2], argv[3]);
-  grep(argv[1], argv[2]);
-  spawn(argc, argv);*/
   while((r=(readln(0, buf, 50)))) {
-    narg=0;
+    narg = 0;
     cmd = strtok(buf, del);
-    while(((token = strtok(NULL, del)) != NULL)) {
+    while(((token = strtok(NULL, del)) != NULL))
       arg[narg++] = token;
-    }
     if (!(strcmp(cmd, "node")))
       node(narg, arg);
+    else if (!(strcmp(cmd, "inject")))
+      inject(narg, arg);
   }
-  printf("%s\n", nodes[1]->cmd);
   return 0;
 }
