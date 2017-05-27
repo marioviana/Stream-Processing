@@ -360,7 +360,6 @@ void spawn(int argc, char **argv){
 
 void writeNode(int id, char buf[128], int r) {
   int nconW = nodes[id-1]->nconW;
-  printf("Valor no write: %d\n", nconW);
   if (nconW>0) {
     for(int i=0; i<nconW; i++){
       if (!fork()) {
@@ -430,30 +429,25 @@ void node(int argc, char **argv) {
     newNodeList(id,cmd,arg,i,p);
     if(!fork()){
       mkfifo(idS, 0666);
-    }
-    else {
-      wait(0);
-    }
-    if(!fork()){
-      mkfifo(idS, 0666);
       f = open(idS, O_RDONLY);
       int fd[2];
       while ((r=(readln(f, buf, 128)))) {
-        char buf2[128];
+        /*char buf2[128];
         strcpy(buf2, buf);
         char *cmd = strtok(buf2, " ");
         if (!strcmp(cmd, "connect")) {
-          char *token, **arg;
+          char *token, *arg[20];
           int narg=0;
           while(((token = strtok(NULL, " ")) != NULL))
             arg[narg++] = token;
           int l, id = atoi(arg[0]);
-          for(l=1; l<argc; l++) {
+          for(l=1; l<narg; l++) {
             nodes[id-1]->conW[nodes[id-1]->nconW] = atoi(arg[l]);
             nodes[id-1]->nconW++;
           }
+          connect(narg, arg);
           printf("Valor NODE: %d\n", nodes[0]->nconW);
-        }
+        }*/
         /*cons(arg[1]);
         pipe(fd);
         if(!fork()){
@@ -469,46 +463,42 @@ void node(int argc, char **argv) {
         }*/
         //readln(fd[0], buf, 128);
         //printf("%s\n", buf);
-        else {
+        //else {
           write(1, "DENTRO DO NODE ", 15);
           write(1, idS, 1);
           write(1, "\n", 1);
           printf("Valor NODE: %d\n", nodes[0]->nconW);
           writeNode(id, buf, r);
-        }
+        //}
       }
+      close(f);
+      unlink(idS);
+      _exit(0);
     }
   }
 }
 
 void inject (int argc, char **argv) {
   int r, f, file;
-  if(!fork()) {
-    char *buf[PIPE_BUF];
-    f = open(argv[0], O_WRONLY);
-    if (!strcmp(argv[1], "cat")) {
-      file = open(argv[2], O_RDONLY);
-      while ((r=(readln(file, buf, PIPE_BUF)))) {
-        write(f, buf, r);
-        write(f, "\n", 1);
-        //printf("INJECT\n");
-      }
-      close(file);
+  char buf[PIPE_BUF];
+  f = open(argv[0], O_WRONLY);
+  if (!strcmp(argv[1], "cat")) {
+    file = open(argv[2], O_RDONLY);
+    while ((r=(readln(file, buf, PIPE_BUF)))) {
+      strcat(buf, "\n");
+      write(f, buf, r+1);
     }
-    else {
-      while ((r=(readln(0, buf, PIPE_BUF)))) {
-        write(f, buf, r);
-        write(f, "\n", 1);
-        //printf("INJECT\n");
-      }
-      write(1, "Leaving inject...\n", 18);
-    }
-    //write(1, "SAI DO INJECT\n", 14);
-    close(f);
-    _exit(0);
+    close(file);
   }
   else {
-    wait(0);
+    while ((r=(readln(0, buf, PIPE_BUF)))) {
+      //if(!fork()){
+        strcat(buf, "\n");
+        write(f, buf, r+1);
+      //  _exit(0);
+      //}
+    }
+    write(1, "Leaving inject...\n", 18);
   }
 }
 
@@ -589,10 +579,12 @@ int main(int argc, char **argv){
       rede(narg, arg);
     else if (!(strcmp(cmd, "connect"))) {
       connect(narg, arg);
-      int file = open(arg[0], O_WRONLY);
+      /*int file = open(arg[0], O_WRONLY);
       write(file, buf2, r);
-      close(file);
+      close(file);*/
     }
+    //printf("Valor MAIN: %d -> PID: %d\n", nodes[0]->nconW, getpid());
+    printf("PID: %d\n", getpid());
   }
   return 0;
 }
