@@ -359,6 +359,7 @@ void spawn(int argc, char **argv){
 }
 
 void writeNode(int id, char buf[128], int r) {
+  printf("Valor WRITE: %d\n", nodes[0]->nconW);
   int nconW = nodes[id-1]->nconW;
   if (nconW>0) {
     for(int i=0; i<nconW; i++){
@@ -432,7 +433,7 @@ void node(int argc, char **argv) {
       f = open(idS, O_RDONLY);
       int fd[2];
       while ((r=(readln(f, buf, 128)))) {
-        /*char buf2[128];
+        char buf2[128];
         strcpy(buf2, buf);
         char *cmd = strtok(buf2, " ");
         if (!strcmp(cmd, "connect")) {
@@ -440,14 +441,10 @@ void node(int argc, char **argv) {
           int narg=0;
           while(((token = strtok(NULL, " ")) != NULL))
             arg[narg++] = token;
-          int l, id = atoi(arg[0]);
-          for(l=1; l<narg; l++) {
-            nodes[id-1]->conW[nodes[id-1]->nconW] = atoi(arg[l]);
-            nodes[id-1]->nconW++;
-          }
           connect(narg, arg);
           printf("Valor NODE: %d\n", nodes[0]->nconW);
-        }*/
+          sleep(5);
+        }
         /*cons(arg[1]);
         pipe(fd);
         if(!fork()){
@@ -463,13 +460,13 @@ void node(int argc, char **argv) {
         }*/
         //readln(fd[0], buf, 128);
         //printf("%s\n", buf);
-        //else {
+        else {
           write(1, "DENTRO DO NODE ", 15);
           write(1, idS, 1);
           write(1, "\n", 1);
           printf("Valor NODE: %d\n", nodes[0]->nconW);
           writeNode(id, buf, r);
-        //}
+        }
       }
       close(f);
       unlink(idS);
@@ -579,9 +576,9 @@ int main(int argc, char **argv){
       rede(narg, arg);
     else if (!(strcmp(cmd, "connect"))) {
       connect(narg, arg);
-      /*int file = open(arg[0], O_WRONLY);
+      int file = open(arg[0], O_WRONLY);
       write(file, buf2, r);
-      close(file);*/
+      close(file);
     }
     //printf("Valor MAIN: %d -> PID: %d\n", nodes[0]->nconW, getpid());
     printf("PID: %d\n", getpid());
