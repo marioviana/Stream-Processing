@@ -7,8 +7,8 @@ int main(int argc, char const *argv[]) {
 	char dados[80];
 	f=open("1",O_RDONLY); /* abre o pipe com nome */
 	for(;;)		{
-		if (read(f,dados,sizeof(dados)) >0 )
-		printf("%s\n",dados);
+		if (read(0,dados,sizeof(dados)) >0 )
+      write(f,dados,sizeof(dados));
 	}
 	return 0;
 }
