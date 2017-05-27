@@ -49,10 +49,6 @@ void newNodeList(int id, char *cmd, char **args, int n, pid_t pid){
   aux->nconR = 0;
   aux->nconW = 0;
   nodes[j] = aux;
-  int length = snprintf( NULL, 0, "%d", id );
-  char *strtmp = malloc (length + 1);
-  snprintf (strtmp, length + 1, "%d", id);
-  mkfifo(strtmp, 0666);
 }
 
 /* Auxilixar function to calculate average of int array for window function */
@@ -361,84 +357,7 @@ void spawn(int argc, char **argv){
   }
 }
 
-void node(int argc, char **argv) {
-  char *arg[argc], *cmd, *buf=NULL;
-  int r, id, i, f;
-  if (argc<2)
-    printf("Error! Not enough arguments\n"); /* argc must be >= 2 */
-  else {
-    id = atoi(argv[0]);
-    cmd = (char *) malloc (sizeof(char)*32);
-    cmd = strdup(argv[1]);
-    for(i=0;i<argc-2;i++)
-      arg[i] = strdup(argv[i+2]);
-    pid_t p = getpid();
-    newNodeList(id,cmd,arg,i,p);
-    int length = snprintf( NULL, 0, "%d", id );
-    char *strtmp = malloc (length + 1);
-    snprintf (strtmp, length + 1, "%d", id);
-    f = open(strtmp, O_RDONLY);
-    int fd[2];
-    while ((r=(readln(f, buf, 128)))) {
-      pipe(fd);
-      if(!fork()){
-        dup2(fd[0],0);
-        dup2(fd[1],1);
-        close(fd[0]);
-        close(fd[1]);
-        cons(arg[1]);
-      }
-      else {
-        dup2(fd[1],1);
-        write(1, buf, r);
-        close(fd[1]);
-        dup2(fd[0],0);
-        close(fd[0]);
-      }
-      readln(fd[0], buf, 128);
-      printf("%s\n", buf);
-      //printf("DENTRO DO PIPE\n");
-      //writeNode(1,buf,r);
-    }
-  }
-}
-
-void inject (int argc, char **argv) {
-  int r, f, file, id = atoi(argv[1]), length = snprintf( NULL, 0, "%d", id );
-  char *strtmp = malloc (length + 1), buf[PIPE_BUF];
-  snprintf (strtmp, length + 1, "%d", id);
-  f = open(strtmp, O_RDONLY);
-  if (!strcmp(argv[2], "cat")) {
-    file = open(argv[3], O_WRONLY);
-    while ((r=(readln(file, buf, PIPE_BUF)))) {
-      write(f, buf, r);
-    }
-  }
-  else {
-    while ((r=(readln(0, buf, PIPE_BUF)))) {
-      write(f, buf, r);
-    }
-  }
-}
-
-void connect(int argc, char **argv){
-  if(!fork()){
-    int id = atoi(argv[1]);
-    for(int l=2; l<argc; l++) {
-      nodes[id-1]->conW[nodes[id-1]->nconW] = atoi(argv[l]);
-      nodes[id-1]->nconW++;
-    }
-  }
-  else {
-    for(int l=2; l<argc; l++) {
-      int id = atoi(argv[l]);
-      nodes[id-1]->conR[nodes[id-1]->nconR] = atoi(argv[1]);
-      nodes[id-1]->nconR++;
-    }
-  }
-}
-
-void writeNode(int id, char *buf, int r) {
+void writeNode(int id, char buf[128], int r) {
   int nconW = nodes[id-1]->nconW;
   if (nconW>0) {
     for(int i=0; i<nconW; i++){
@@ -446,7 +365,7 @@ void writeNode(int id, char *buf, int r) {
         int length = snprintf( NULL, 0, "%d",  nodes[id-1]->conW[i]);
         char *strtmp = malloc (length + 1);
         snprintf (strtmp, length + 1, "%d", nodes[id-1]->conW[i]);
-        int f = open(strtmp, O_RDONLY);
+        int f = open(strtmp, O_WRONLY);
         write(f, buf, r);
       }
     }
@@ -465,12 +384,100 @@ void readlnNode(int id, char *buf, int r){
         char *strtmp = malloc (length + 1);
         snprintf (strtmp, length + 1, "%d", nodes[id-1]->conR[i]);
         int f = open(strtmp, O_RDONLY);
-        read(f, buf, r);
+        readln(f, buf, r);
       }
     }
   }
   else {
     read(0, buf, r);
+  }
+}
+
+void node(int argc, char **argv) {
+  char *arg[argc], *cmd, buf[128];
+  int r, id, i, f;
+  if (argc<2)
+    printf("Error! Not enough arguments\n"); /* argc must be >= 2 */
+  else {
+    id = atoi(argv[0]);
+    cmd = (char *) malloc (sizeof(char)*32);
+    cmd = strdup(argv[1]);
+    for(i=0;i<argc-2;i++)
+      arg[i] = strdup(argv[i+2]);
+    pid_t p = getpid();
+    newNodeList(id,cmd,arg,i,p);
+    if(!fork()){
+      mkfifo(argv[0], 0666);
+      f = open(argv[0], O_RDONLY);
+      int fd[2];
+      while ((r=(readln(f, buf, 128)))) {
+        /*pipe(fd);
+        if(!fork()){
+          dup2(fd[0],0);
+          dup2(fd[1],1);
+          close(fd[0]);
+          close(fd[1]);
+          cons(arg[1]);
+        }
+        else {
+          dup2(fd[1],1);
+          write(1, buf, r);
+          close(fd[1]);
+          dup2(fd[0],0);
+          close(fd[0]);
+        }*/
+        //readln(fd[0], buf, 128);
+        //printf("%s\n", buf);
+        printf("DENTRO DO PIPE\n");
+        writeNode(id,buf,r);
+      }
+    }
+    /*else {
+      wait(0);
+    }*/
+  }
+}
+
+void inject (int argc, char **argv) {
+  int r, f, file, id = atoi(argv[1]), length = snprintf( NULL, 0, "%d", id );
+  char *strtmp = malloc (length + 1), buf[PIPE_BUF];
+  snprintf (strtmp, length + 1, "%d", id);
+  f = open(strtmp, O_WRONLY);
+  if(!fork()) {
+    if (!strcmp(argv[2], "cat")) {
+      file = open(argv[3], O_RDONLY);
+      while ((r=(readln(file, buf, PIPE_BUF)))) {
+        write(f, buf, r);
+        printf("INJECT\n");
+      }
+    }
+    else {
+      while ((r=(readln(0, buf, PIPE_BUF)))) {
+        write(f, buf, r);
+        printf("INJECT\n");
+      }
+    }
+    _exit(0);
+  }
+  else {
+    wait(0);
+  }
+}
+
+void connect(int argc, char **argv){
+  if(!fork()){
+    int id = atoi(argv[1]);
+    for(int l=2; l<argc; l++) {
+      nodes[id-1]->conW[nodes[id-1]->nconW] = atoi(argv[l]);
+      nodes[id-1]->nconW++;
+    }
+  }
+  else {
+    for(int l=2; l<argc; l++) {
+      int id = atoi(argv[l]);
+      nodes[id-1]->conR[nodes[id-1]->nconR] = atoi(argv[1]);
+      nodes[id-1]->nconR++;
+    }
   }
 }
 
