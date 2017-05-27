@@ -360,6 +360,7 @@ void spawn(int argc, char **argv){
 
 void writeNode(int id, char buf[128], int r) {
   int nconW = nodes[id-1]->nconW;
+  printf("Valor no write: %d\n", nconW);
   if (nconW>0) {
     for(int i=0; i<nconW; i++){
       if (!fork()) {
@@ -370,6 +371,7 @@ void writeNode(int id, char buf[128], int r) {
         write(f, buf, r);
         write(f, "\n", 1);
         close(f);
+        _exit(0);
       }
     }
     for(int i=0; i<nconW; i++){
@@ -400,6 +402,19 @@ void readlnNode(int id, char *buf, int r){
   }
 }
 
+void connect(int argc, char **argv){
+  int l, id = atoi(argv[0]);
+  for(l=1; l<argc; l++) {
+    nodes[id-1]->conW[nodes[id-1]->nconW] = atoi(argv[l]);
+    nodes[id-1]->nconW++;
+  }
+  /*for(l=1; l<argc; l++) {
+    id = atoi(argv[l]);
+    nodes[id-1]->conR[nodes[id-1]->nconR] = atoi(argv[0]);
+    nodes[id-1]->nconR++;
+  }*/
+}
+
 void node(int argc, char **argv) {
   char *arg[argc], *cmd, buf[128], *idS = argv[0];
   int r, id, i, f;
@@ -424,6 +439,21 @@ void node(int argc, char **argv) {
       f = open(idS, O_RDONLY);
       int fd[2];
       while ((r=(readln(f, buf, 128)))) {
+        char buf2[128];
+        strcpy(buf2, buf);
+        char *cmd = strtok(buf2, " ");
+        if (!strcmp(cmd, "connect")) {
+          char *token, **arg;
+          int narg=0;
+          while(((token = strtok(NULL, " ")) != NULL))
+            arg[narg++] = token;
+          int l, id = atoi(arg[0]);
+          for(l=1; l<argc; l++) {
+            nodes[id-1]->conW[nodes[id-1]->nconW] = atoi(arg[l]);
+            nodes[id-1]->nconW++;
+          }
+          printf("Valor NODE: %d\n", nodes[0]->nconW);
+        }
         /*cons(arg[1]);
         pipe(fd);
         if(!fork()){
@@ -439,18 +469,20 @@ void node(int argc, char **argv) {
         }*/
         //readln(fd[0], buf, 128);
         //printf("%s\n", buf);
-        write(1, "DENTRO DO NODE ", 15);
-        write(1, idS, 1);
-        write(1, "\n", 1);
-        writeNode(id, buf, r);
+        else {
+          write(1, "DENTRO DO NODE ", 15);
+          write(1, idS, 1);
+          write(1, "\n", 1);
+          printf("Valor NODE: %d\n", nodes[0]->nconW);
+          writeNode(id, buf, r);
+        }
       }
     }
   }
 }
 
 void inject (int argc, char **argv) {
-  int r, f, file, id = atoi(argv[0]);
-  char *idS = argv[1];
+  int r, f, file;
   if(!fork()) {
     char *buf[PIPE_BUF];
     f = open(argv[0], O_WRONLY);
@@ -478,19 +510,6 @@ void inject (int argc, char **argv) {
   else {
     wait(0);
   }
-}
-
-void connect(int argc, char **argv){
-  int l, id = atoi(argv[0]);
-  for(l=1; l<argc; l++) {
-    nodes[id-1]->conW[nodes[id-1]->nconW] = atoi(argv[l]);
-    nodes[id-1]->nconW = nodes[id-1]->nconW+1;
-  }
-  /*for(l=1; l<argc; l++) {
-    id = atoi(argv[l]);
-    nodes[id-1]->conR[nodes[id-1]->nconR] = atoi(argv[0]);
-    nodes[id-1]->nconR++;
-  }*/
 }
 
 void funout(int argc, char **argv){
@@ -554,9 +573,10 @@ void rede(int argc, char **argv){
 
 int main(int argc, char **argv){
   int r, narg;
-  char buf[128], *cmd, *del=" ", *token, *arg[20];
+  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20];
   initNodeList();
   while((r=(readln(0, buf, 128)))) {
+    strcpy(buf2, buf);
     narg = 0;
     cmd = strtok(buf, del);
     while(((token = strtok(NULL, del)) != NULL))
@@ -567,8 +587,12 @@ int main(int argc, char **argv){
       inject(narg, arg);
     else if (!(strcmp(cmd, "rede")))
       rede(narg, arg);
-    else if (!(strcmp(cmd, "connect")))
+    else if (!(strcmp(cmd, "connect"))) {
       connect(narg, arg);
+      int file = open(arg[0], O_WRONLY);
+      write(file, buf2, r);
+      close(file);
+    }
   }
   return 0;
 }
