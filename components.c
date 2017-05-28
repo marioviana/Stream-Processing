@@ -2,69 +2,65 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include "components.h"
 
-#define PIPE_BUF 20
-
-// Auxilixar function to window
+/* Auxilixar function to calculate average of int array for window function */
 int avg(int inteiro[], int size){
   int i, total=0;
-  for(i=0; i<size; i++){
+  for(i=0; i<size; i++)
     total += inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return (total/size);
 }
 
-// Auxilixar function to window
+/* Auxilixar function to calculate sum of int array for window function */
 int sum(int inteiro[], int size){
   int i, total=0;
-  for(i=0; i<size; i++){
+  for(i=0; i<size; i++)
     total += inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return total;
 }
 
-// Auxilixar function to window
+/* Auxilixar function to calculate max of int array for window function */
 int max(int inteiro[], int size){
   int i, max=inteiro[0];
-  for(i=1; i<size; i++){
+  for(i=1; i<size; i++)
     if (inteiro[i]>max)
       max = inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return max;
 }
 
-// Auxilixar function to window
+/* Auxilixar function to calculate min of int array for window function */
 int min(int inteiro[], int size){
   int i, min=inteiro[0];
-  for(i=1; i<size; i++){
+  for(i=1; i<size; i++)
     if (inteiro[i]<min)
       min = inteiro[i];
-  }
   if (size==0)
     return 0;
   else
     return min;
 }
 
-// Auxiliar function to spawn
+/* Auxiliar function to remove an element from an array for spawn function */
 void remove_element(char **array, int index, int array_length) {
-   int i;
-   for(i = index; i < array_length - 1; i++)
+  int i;
+  for(i = index; i < array_length - 1; i++)
     array[i] = array[i + 1];
 }
 
-// Auxiliar function to read line
+/* Auxiliar function to read line */
 ssize_t readln(int fld, char *buf, size_t nbyte){
   int i=0;
   while ((read(fld,buf+i,1)>0) && i<nbyte && (buf[i]!='\n'))
@@ -73,6 +69,7 @@ ssize_t readln(int fld, char *buf, size_t nbyte){
   return i;
 }
 
+/* Const component: const <value> */
 void cons(char *value){
   int r; char buf[PIPE_BUF+1];
   while((r=(readln(0, buf, PIPE_BUF)))) {
@@ -89,6 +86,7 @@ void cons(char *value){
   }
 }
 
+/* Window component: window <column> <operation> <lines> */
 void window(char *col, char *op, char *lines){
   int result, a, i, r, loop=0, before[atoi(lines)];
   for (i=0; i<atoi(lines); i++)
@@ -168,6 +166,7 @@ void window(char *col, char *op, char *lines){
   }
 }
 
+/* Filter component: filter <column> <operation> <integer> */
 void filter(char *value1, char *operation, char *value2) {
   int i, r, v1, v2, v3, c1, c2;
   char buf[PIPE_BUF+1], *aux[PIPE_BUF+1], bufcpy[PIPE_BUF+1];
@@ -234,6 +233,7 @@ void filter(char *value1, char *operation, char *value2) {
   }
 }
 
+/* Grep component: grep <column> <value> */
 void grep(char *col, char *search){
   int a, r;
   char buf[PIPE_BUF+1], bufcpy[PIPE_BUF+1], *del=":", *token;
@@ -252,6 +252,7 @@ void grep(char *col, char *search){
   }
 }
 
+/* Window component: spawn <command> <args...> */
 void spawn(int argc, char **argv){
   int x=0, a, i, r, arg[argc], trash[argc]; arg[0]=0;
   char buf[PIPE_BUF+1], bufcpy[PIPE_BUF+1], *del=":", *token, *statusS=NULL;
@@ -310,55 +311,4 @@ void spawn(int argc, char **argv){
       }
     }
   }
-}
-
-void funout(int argc, char **argv){
-  for(int i=2; i<argc; i++) {
-    int pd[2];
-    pipe(pd);
-    if(!fork()) {
-      close(pd[0]);
-      dup2(pd[1],1);
-      close(pd[1]);
-      close(pd[0]);
-      execlp(argv[1], argv[1], NULL);
-      _exit(1);
-    }
-    if(!fork()) {
-      dup2(pd[0],0);
-      close(pd[0]);
-      close(pd[1]);
-      execlp(argv[i], argv[i], NULL);
-      _exit(1);
-    }
-  }
-}
-
-void funin(int argc, char **argv){
-  for(int i=1; i<argc-1; i++) {
-    int pd[2];
-    pipe(pd);
-    if(!fork()) {
-      dup2(pd[1],1);
-      close(pd[1]);
-      close(pd[0]);
-      execlp(argv[i], argv[i], NULL);
-    }
-    if(!fork()) {
-      dup2(pd[0],0);
-      close(pd[0]);
-      close(pd[1]);
-      execlp(argv[argc-1], argv[argc-1], NULL);
-    }
-  }
-}
-
-int main(int argc, char **argv){
-  //cons(argv[1]);
-  //window(argv[1], argv[2], argv[3]);
-  //filter(argv[1], argv[2], argv[3]);
-  //grep(argv[1], argv[2]);
-  //spawn(argc, argv);
-  //funout(argc, argv);
-  return 0;
 }
