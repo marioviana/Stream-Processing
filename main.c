@@ -426,7 +426,6 @@ void node(int argc, char **argv) {
       f = open(idS, O_RDONLY);
       int fd[2];
       while ((r=(readln(f, buf, 128)))) {
-        write(1, "NODE\n", 5);
         char buf2[128];
         strcpy(buf2, buf);
         char *cmd = strtok(buf2, " ");
@@ -568,7 +567,8 @@ int main(int argc, char **argv){
     else if (!(strcmp(cmd, "connect"))) {
       connect(narg, arg);
       f = open(arg[0], O_WRONLY);
-      write(f, buf2, r);
+      strcat(buf2, "\n");
+      write(f, buf2, r+1);
     }
     //printf("Valor MAIN: %d -> PID: %d\n", nodes[0]->nconW, getpid());
     printf("PID: %d\n", getpid());
