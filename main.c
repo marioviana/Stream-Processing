@@ -16,8 +16,8 @@ typedef struct node {
   char *args[20]; /* the arguments of the command, with 10 being the max number of arguments */
   int nargs;      /* number of arguments in args */
   pid_t pid;      /* pid of the process */
-  int conR[20];
-  int nconR;
+  /*int conR[20];
+  int nconR;*/
   int conW[20];
   int nconW;
 } *NodeList;
@@ -44,10 +44,10 @@ void newNodeList(int id, char *cmd, char **args, int n, pid_t pid){
   aux->nargs = n;
   aux->pid = pid;
   for(i=0; i<20; i++) {
-    aux->conR[i] = 0;
+    //aux->conR[i] = 0;
     aux->conW[i] = 0;
   }
-  aux->nconR = 0;
+  //aux->nconR = 0;
   aux->nconW = 0;
   nodes[j] = aux;
 }
@@ -384,7 +384,7 @@ void writeNode(int id, char buf[128], int r) {
   }
 }
 
-void readlnNode(int id, char *buf, int r){
+/*void readlnNode(int id, char *buf, int r){
   int nconR = nodes[id-1]->nconR;
   if (nconR>0) {
     for(int i=0; i<nconR; i++){
@@ -400,7 +400,7 @@ void readlnNode(int id, char *buf, int r){
   else {
     readln(0, buf, r);
   }
-}
+}*/
 
 void connect(int argc, char **argv){
   int l, id = atoi(argv[0]);
@@ -443,7 +443,6 @@ void node(int argc, char **argv) {
             arg[narg++] = token;
           connect(narg, arg);
           printf("Valor NODE: %d\n", nodes[0]->nconW);
-          sleep(5);
         }
         /*cons(arg[1]);
         pipe(fd);
@@ -578,7 +577,6 @@ int main(int argc, char **argv){
       connect(narg, arg);
       int file = open(arg[0], O_WRONLY);
       write(file, buf2, r);
-      close(file);
     }
     //printf("Valor MAIN: %d -> PID: %d\n", nodes[0]->nconW, getpid());
     printf("PID: %d\n", getpid());
