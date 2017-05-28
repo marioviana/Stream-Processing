@@ -74,6 +74,7 @@ void node(int argc, char **argv) {
       arg[i] = strdup(argv[i+2]);
     pid_t p = getpid();
     newNodeList(nodes, id,cmd,arg,i,p);
+    write(1, "NODE\n", 5);
     if(!fork()){
       mkfifo(idS, 0666);
       f = open(idS, O_RDONLY);
@@ -144,9 +145,10 @@ void inject (int argc, char **argv) {
 }
 
 void rede(int argc, char **argv){
-  int r, f = open(argv[0], O_RDONLY), narg;
-  char buf[128], *cmd, *del=" ", *token, *arg[20];
+  int r, f = open(argv[0], O_RDONLY), narg, file;
+  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20];
   while ((r=(readln(f, buf, 128)))) {
+    strcpy(buf2, buf);
     narg = 0;
     cmd = strtok(buf, del);
     while(((token = strtok(NULL, del)) != NULL))
@@ -155,14 +157,19 @@ void rede(int argc, char **argv){
       node(narg, arg);
     else if (!(strcmp(cmd, "inject")))
       inject(narg, arg);
-    else if (!(strcmp(cmd, "connect")))
+    else if (!(strcmp(cmd, "connect"))) {
       connect(narg, arg);
+      file = open(arg[0], O_WRONLY);
+      strcat(buf2, "\n");
+      write(f, buf2, r+1);
+    }
   }
+  close(f);
 }
 
 int main(int argc, char **argv){
-  int r, narg;
-  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20], f;
+  int r, narg, f;
+  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20];
   initNodeList(nodes);
   while((r=(readln(0, buf, 128)))) {
     strcpy(buf2, buf);

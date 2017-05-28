@@ -1,3 +1,2 @@
-node 1 cons 10
-node 2 cons 10
-connect 1 2
+node 1 cons 1
+node 2 cons 2
