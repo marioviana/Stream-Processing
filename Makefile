@@ -1,5 +1,8 @@
 default: main
 
+run: main
+		./main
+
 main: main.o components.o struct.o
 			gcc -o main main.o components.o struct.o
 
