@@ -1,6 +1,14 @@
 #ifndef STRUCT_H
 #define STRUCT_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
 #define N_EVENTS 200
 
 typedef struct node {

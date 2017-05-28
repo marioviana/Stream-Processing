@@ -1,6 +1,14 @@
 #ifndef COMPONENTS_H
 #define COMPONENTS_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
 #define PIPE_BUF 50   /* Maximum length of event */
 
 int avg(int inteiro[], int size);
