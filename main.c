@@ -363,24 +363,17 @@ void writeNode(int id, char buf[128], int r) {
   int nconW = nodes[id-1]->nconW;
   if (nconW>0) {
     for(int i=0; i<nconW; i++){
-      if (!fork()) {
-        int length = snprintf( NULL, 0, "%d",  nodes[id-1]->conW[i]);
-        char *strtmp = malloc (length + 1);
-        snprintf (strtmp, length + 1, "%d", nodes[id-1]->conW[i]);
-        int f = open(strtmp, O_WRONLY);
-        write(f, buf, r);
-        write(f, "\n", 1);
-        close(f);
-        _exit(0);
-      }
-    }
-    for(int i=0; i<nconW; i++){
-      wait(0);
+      int length = snprintf( NULL, 0, "%d",  nodes[id-1]->conW[i]);
+      char *strtmp = malloc (length + 1);
+      snprintf (strtmp, length + 1, "%d", nodes[id-1]->conW[i]);
+      int f = open(strtmp, O_WRONLY);
+      strcat(buf, "\n");
+      write(f, buf, r+1);
     }
   }
   else {
-    write(1, buf, r);
-    write(1, "\n", 1);
+    strcat(buf, "\n");
+    write(1, buf, r+1);
   }
 }
 
@@ -463,7 +456,6 @@ void node(int argc, char **argv) {
           write(1, "DENTRO DO NODE ", 15);
           write(1, idS, 1);
           write(1, "\n", 1);
-          printf("Valor NODE: %d\n", nodes[0]->nconW);
           writeNode(id, buf, r);
         }
       }
