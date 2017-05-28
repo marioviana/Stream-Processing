@@ -546,7 +546,6 @@ void rede(int argc, char **argv){
     else if (!(strcmp(cmd, "connect")))
       connect(narg, arg);
   }
-  close(f);
 }
 
 int main(int argc, char **argv){
