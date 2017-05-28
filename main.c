@@ -426,6 +426,7 @@ void node(int argc, char **argv) {
       f = open(idS, O_RDONLY);
       int fd[2];
       while ((r=(readln(f, buf, 128)))) {
+        write(1, "NODE\n", 5);
         char buf2[128];
         strcpy(buf2, buf);
         char *cmd = strtok(buf2, " ");
@@ -435,7 +436,7 @@ void node(int argc, char **argv) {
           while(((token = strtok(NULL, " ")) != NULL))
             arg[narg++] = token;
           connect(narg, arg);
-          printf("Valor NODE: %d\n", nodes[0]->nconW);
+          write(1, "NODE\n", 5);
         }
         /*cons(arg[1]);
         pipe(fd);
@@ -550,7 +551,7 @@ void rede(int argc, char **argv){
 
 int main(int argc, char **argv){
   int r, narg;
-  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20];
+  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20], f;
   initNodeList();
   while((r=(readln(0, buf, 128)))) {
     strcpy(buf2, buf);
@@ -566,8 +567,8 @@ int main(int argc, char **argv){
       rede(narg, arg);
     else if (!(strcmp(cmd, "connect"))) {
       connect(narg, arg);
-      int file = open(arg[0], O_WRONLY);
-      write(file, buf2, r);
+      f = open(arg[0], O_WRONLY);
+      write(f, buf2, r);
     }
     //printf("Valor MAIN: %d -> PID: %d\n", nodes[0]->nconW, getpid());
     printf("PID: %d\n", getpid());
