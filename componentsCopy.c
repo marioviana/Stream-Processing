@@ -1,6 +1,13 @@
-#include "components.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 
-/* Auxilixar function to calculate average of int array for window function */
+#define PIPE_BUF 100   /* Maximum length of event */
+
 int avg(int inteiro[], int size){
   int i, total=0;
   for(i=0; i<size; i++)
@@ -93,76 +100,84 @@ void window(char *col, char *op, char *lines){
     before[i] = 0;
   char buf[PIPE_BUF+1], bufcpy[PIPE_BUF+1], *del=":", *token;
   while((r=(readln(0, buf, PIPE_BUF)))) {
-    if (r==PIPE_BUF || ((r+3) > PIPE_BUF)) {
-      write(1, buf, PIPE_BUF);
+    int x, count;
+    char *buf2 = strdup(buf);
+    for (x=0, count=0; buf2[x]; x++)
+      count += (buf2[x] == ':');
+    if (count < atoi(col)-1) {
       write(1, "\n", 1);
     }
     else {
-      if (loop < (atoi(lines)))
-        i = loop;
-      else
-        i = (atoi(lines));
-      if (!strcmp(op, "avg")){
-        result = avg(before, i);
-        strcat(buf, ":");
-        int length = snprintf( NULL, 0, "%d", result );
-        char* resultS = malloc( length + 1 );
-        snprintf( resultS, length + 1, "%d", result );
-        strcat(buf, resultS);
-        write(1, buf, r+1+strlen(resultS));
+      if (r==PIPE_BUF || ((r+2) > PIPE_BUF)) {
+        write(1, buf, PIPE_BUF);
         write(1, "\n", 1);
-        free(resultS);
       }
-      else if (!strcmp(op, "sum")){
-        result = sum(before, i);
-        strcat(buf, ":");
-        int length = snprintf( NULL, 0, "%d", result );
-        char* resultS = malloc( length + 1 );
-        snprintf( resultS, length + 1, "%d", result );
-        printf("%s\n", resultS);
-        strcat(buf, resultS);
-        write(1, buf, r+1+strlen(resultS));
-        write(1, "\n", 1);
-        free(resultS);
-      }
-      else if (!strcmp(op, "max")){
-        result = max(before, i);
-        strcat(buf, ":");
-        int length = snprintf( NULL, 0, "%d", result );
-        char* resultS = malloc( length + 1 );
-        snprintf( resultS, length + 1, "%d", result );
-        strcat(buf, resultS);
-        write(1, buf, r+1+strlen(resultS));
-        write(1, "\n", 1);
-        free(resultS);
-      }
-      else if (!strcmp(op, "min")){
-        result = min(before, i);
-        strcat(buf, ":");
-        int length = snprintf( NULL, 0, "%d", result );
-        char* resultS = malloc( length + 1 );
-        snprintf( resultS, length + 1, "%d", result );
-        strcat(buf, resultS);
-        write(1, buf, r+1+strlen(resultS));
-        write(1, "\n", 1);
-        free(resultS);
-      }
-      a=1;
-      strcpy(bufcpy, buf);
-      token = strtok(bufcpy, del);
-      if (atoi(col)==1)
-        before[loop%(atoi(lines))] = atoi(token);
       else {
-        while(((token = strtok(NULL, del)) != NULL) && (a+1)<atoi(col)) {
-          a++;
-        }
-        if (atoi(col)==(a+1))
+        if (loop < (atoi(lines)))
+          i = loop;
+          else
+          i = (atoi(lines));
+          if (!strcmp(op, "avg")){
+            result = avg(before, i);
+            strcat(buf, ":");
+            int length = snprintf( NULL, 0, "%d", result );
+            char* resultS = malloc( length + 1 );
+            snprintf( resultS, length + 1, "%d", result );
+            strcat(buf, resultS);
+            write(1, buf, r+1+strlen(resultS));
+            write(1, "\n", 1);
+            free(resultS);
+          }
+          else if (!strcmp(op, "sum")){
+            result = sum(before, i);
+            strcat(buf, ":");
+            int length = snprintf( NULL, 0, "%d", result );
+            char* resultS = malloc( length + 1 );
+            snprintf( resultS, length + 1, "%d", result );
+            strcat(buf, resultS);
+            write(1, buf, r+1+strlen(resultS));
+            write(1, "\n", 1);
+            free(resultS);
+          }
+          else if (!strcmp(op, "max")){
+            result = max(before, i);
+            strcat(buf, ":");
+            int length = snprintf( NULL, 0, "%d", result );
+            char* resultS = malloc( length + 1 );
+            snprintf( resultS, length + 1, "%d", result );
+            strcat(buf, resultS);
+            write(1, buf, r+1+strlen(resultS));
+            write(1, "\n", 1);
+            free(resultS);
+          }
+          else if (!strcmp(op, "min")){
+            result = min(before, i);
+            strcat(buf, ":");
+            int length = snprintf( NULL, 0, "%d", result );
+            char* resultS = malloc( length + 1 );
+            snprintf( resultS, length + 1, "%d", result );
+            strcat(buf, resultS);
+            write(1, buf, r+1+strlen(resultS));
+            write(1, "\n", 1);
+            free(resultS);
+          }
+          a=1;
+          strcpy(bufcpy, buf);
+          token = strtok(bufcpy, del);
+          if (atoi(col)==1)
           before[loop%(atoi(lines))] = atoi(token);
-        else
-          before[loop%(atoi(lines))] = 0;
-      }
+          else {
+            while(((token = strtok(NULL, del)) != NULL) && (a+1)<atoi(col)) {
+              a++;
+            }
+            if (atoi(col)==(a+1))
+            before[loop%(atoi(lines))] = atoi(token);
+            else
+            before[loop%(atoi(lines))] = 0;
+          }
+        }
+      loop++;
     }
-    loop++;
   }
 }
 
@@ -175,6 +190,10 @@ void filter(char *value1, char *operation, char *value2) {
   v3 = v1>v2?v1:v2; // v3 = max v1 v2
 
   while((r=(readln(0, buf, PIPE_BUF)))) {
+    int x, count;
+    char *buf2 = strdup(buf);
+    for (x=0, count=0; buf2[x]; x++)
+      count += (buf2[x] == ':');
     strcpy(bufcpy, buf);
     aux[0] = strtok(bufcpy, ":");
     i=1;
@@ -182,7 +201,10 @@ void filter(char *value1, char *operation, char *value2) {
       aux[i] = strtok(NULL, ":");
       i++;
     }
-    if(!(strcmp(operation, "="))){
+    if(count<(atoi(value2)-1)){
+      write(1, "\n", 1);
+    }
+    else if(!(strcmp(operation, "="))){
       c1 = atoi(aux[v1-1]);
       c2 = atoi(aux[v2-1]);
       if(c1==c2) {
@@ -248,6 +270,12 @@ void grep(char *col, char *search){
         write(1, buf, r);
         write(1, "\n", 1);
       }
+      else {
+        write(1, "\n", 1);
+      }
+    }
+    else {
+      write(1, "\n", 1);
     }
   }
 }
@@ -285,7 +313,7 @@ void spawn(int argc, char **argv){
     }
     argc-=x;
     if (!fork()) {
-      execvp(argv[1], argv+1);
+      execvp(argv[0], argv);
       exit(1);
     }
     else {
@@ -311,4 +339,9 @@ void spawn(int argc, char **argv){
       }
     }
   }
+}
+
+int main(int argc, char *argv[]) {
+  spawn(argc-1, argv+1);
+  return 0;
 }
