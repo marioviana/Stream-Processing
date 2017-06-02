@@ -69,10 +69,13 @@ void removeNode(struct node **node, int id){
 }
 
 void changeComponent(struct node **node, int id, int narg, char **arg){
+  char *aux = strdup("./");
+  strcat(aux, arg[1]);
   int i, idN = existNode(node, id);
   for(i=0; i<20; i++)
     node[idN]->args[i] = NULL;
-  for(i=0; arg[i+1] != NULL; i++)
+  node[idN]->args[0] = strdup(aux);
+  for(i=1; arg[i+1] != NULL; i++)
     node[idN]->args[i] = strdup(arg[i+1]);
   node[idN]->nargs=narg-1;
 }

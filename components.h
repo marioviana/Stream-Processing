@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-#define PIPE_BUF 50   /* Maximum length of event */
+#define PIPE_BUF 100   /* Maximum length of event */
 
 int avg(int inteiro[], int size);
 int sum(int inteiro[], int size);

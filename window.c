@@ -53,13 +53,6 @@ int min(int inteiro[], int size){
     return min;
 }
 
-/* Auxiliar function to copy an array */
-/*int * intdup(int const * src, size_t len) {
-   int * p = malloc(len * sizeof(int));
-   memcpy(p, src, len * sizeof(int));
-   return p;
-}*/
-
 /* Auxiliar function to remove an element from an array */
 void remove_element(char **array, int index, int array_length) {
   int i;
@@ -74,23 +67,6 @@ ssize_t readln(int fld, char *buf, size_t nbyte){
     i++;
   buf[i]='\0';
   return i;
-}
-
-/* Const component: const <value> */
-void cons(char *value){
-  int r; char buf[PIPE_BUF+1];
-  while((r=(readln(0, buf, PIPE_BUF)))) {
-    if (r==PIPE_BUF || ((r+strlen(value)+1) > PIPE_BUF)) {
-      write(1, buf, PIPE_BUF);
-      write(1, "\n", 1);
-    }
-    else {
-      strcat(buf, ":");
-      strcat(buf, value);
-      write(1, buf, (r+strlen(value)+1));
-      write(1, "\n", 1);
-    }
-  }
 }
 
 /* Window component: window <column> <operation> <lines> */
@@ -181,167 +157,7 @@ void window(char *col, char *op, char *lines){
   }
 }
 
-/* Filter component: filter <column> <operation> <integer> */
-void filter(char *value1, char *operation, char *value2) {
-  int i, r, v1, v2, v3, c1, c2;
-  char buf[PIPE_BUF+1], *aux[PIPE_BUF+1], bufcpy[PIPE_BUF+1];
-  v1 = atoi(value1);
-  v2 = atoi(value2);
-  v3 = v1>v2?v1:v2; // v3 = max v1 v2
-
-  while((r=(readln(0, buf, PIPE_BUF)))) {
-    int x, count;
-    char *buf2 = strdup(buf);
-    for (x=0, count=0; buf2[x]; x++)
-      count += (buf2[x] == ':');
-    strcpy(bufcpy, buf);
-    aux[0] = strtok(bufcpy, ":");
-    i=1;
-    while(i<=(v3-1)){
-      aux[i] = strtok(NULL, ":");
-      i++;
-    }
-    if(count<(atoi(value2)-1)){
-      write(1, "\n", 1);
-    }
-    else if(!(strcmp(operation, "="))){
-      c1 = atoi(aux[v1-1]);
-      c2 = atoi(aux[v2-1]);
-      if(c1==c2) {
-        write(1, buf, r);
-        write(1, "\n", 1);
-      }
-    }
-    else if(!(strcmp(operation, "<"))){
-      c1 = atoi(aux[v1-1]);
-      c2 = atoi(aux[v2-1]);
-      if(c1<c2) {
-        write(1, buf, r);
-        write(1, "\n", 1);
-      }
-    }
-    else if(!(strcmp(operation, "<="))){
-      c1 = atoi(aux[v1-1]);
-      c2 = atoi(aux[v2-1]);
-      if(c1<=c2) {
-        write(1, buf, r);
-        write(1, "\n", 1);
-      }
-    }
-    else if(!(strcmp(operation, ">"))){
-      c1 = atoi(aux[v1-1]);
-      c2 = atoi(aux[v2-1]);
-      if(c1>c2) {
-        write(1, buf, r);
-        write(1, "\n", 1);
-      }
-    }
-    else if(!(strcmp(operation, ">="))){
-      c1 = atoi(aux[v1-1]);
-      c2 = atoi(aux[v2-1]);
-      if(c1>=c2) {
-        write(1, buf, r);
-        write(1, "\n", 1);
-      }
-    }
-    else if(!(strcmp(operation, "!="))){
-      c1 = atoi(aux[v1-1]);
-      c2 = atoi(aux[v2-1]);
-      if(c1!=c2) {
-        write(1, buf, r);
-        write(1, "\n", 1);
-      }
-    }
-  }
-}
-
-/* Grep component: grep <column> <value> */
-void grep(char *col, char *search){
-  int a, r;
-  char buf[PIPE_BUF+1], bufcpy[PIPE_BUF+1], *del=":", *token;
-  while((r=(readln(0, buf, PIPE_BUF)))) {
-    a=1;
-    strcpy(bufcpy, buf);
-    if  (strstr(buf, ":") != NULL) {
-      token = strtok(bufcpy, del);
-      while (a < atoi(col) && ((token = strtok(NULL, del)) != NULL))
-        a++;
-      if (!(strcmp(token, search))){
-        write(1, buf, r);
-        write(1, "\n", 1);
-      }
-      else {
-        write(1, "\n", 1);
-      }
-    }
-    else {
-      write(1, "\n", 1);
-    }
-  }
-}
-
-/* Window component: spawn <command> <args...> */
-void spawn(int argc, char **argv){
-  int x=0, a, i, r, arg[argc], trash[argc]; arg[0]=0;
-  char buf[PIPE_BUF+1], bufcpy[PIPE_BUF+1], *del=":", *token, *statusS=NULL;
-  for (i=1; i<argc; i++)
-    (strstr(argv[i], "$") != NULL) ? (arg[i]=atoi(argv[i]+1)) : (arg[i]=0);
-  while((r=(readln(0, buf, PIPE_BUF)))) {
-    for (i=1; i<argc; i++) {
-      a=1;
-      if (arg[i]!=0) {
-        strcpy(bufcpy, buf);
-        token = strtok(bufcpy, del);
-        if (arg[i]==1)
-          argv[i] = token;
-        else {
-          while(a < arg[i] && ((token = strtok(NULL, del)) != NULL)) {
-            a++;
-          }
-          if (arg[i] == a)
-            strcpy(argv[i], token);
-          else
-            trash[i]=1;
-        }
-      }
-    }
-    for (i=1; i<argc; i++) {
-      if (trash[i]==1) {
-        remove_element(argv, i, argc);
-        x++;
-      }
-    }
-    argc-=x;
-    if (!fork()) {
-      execvp(argv[0], argv);
-      exit(1);
-    }
-    else {
-      int status;
-      wait(&status);
-      if (WIFEXITED(status)) {
-        if (WEXITSTATUS(status)==1)
-          statusS="1";
-        else
-          statusS="0";
-      }
-      else
-        statusS="1";
-      if (r==PIPE_BUF || ((r+strlen(statusS)+1) > PIPE_BUF)) {
-        write(1, buf, PIPE_BUF);
-        write(1, "\n", 1);
-      }
-      else {
-        strcat(buf, ":");
-        strcat(buf, statusS);
-        write(1, buf, (r+strlen(statusS)+1));
-        write(1, "\n", 1);
-      }
-    }
-  }
-}
-
 int main(int argc, char *argv[]) {
-  spawn(argc-1, argv+1);
+  window(argv[1], argv[2], argv[3]);
   return 0;
 }

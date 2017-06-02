@@ -5,16 +5,27 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include "components.h"
+//#include "components.h"
 #include "struct.h"
+
+#define PIPE_BUF 100   /* Maximum length of event */
 
 /* declaration of the global structure for nodes */
 NodeList nodes[N_EVENTS];
 
+/* Auxiliar function to read line */
+ssize_t readln(int fld, char *buf, size_t nbyte){
+  int i=0;
+  while ((read(fld,buf+i,1)>0) && i<nbyte && (buf[i]!='\n'))
+    i++;
+  buf[i]='\0';
+  return i;
+}
+
+/* Write in stdout or in nodes that conW have of the node id */
 void writeNode(int id, char buf[128], int r) {
   int idN = existNode(nodes, id);
   int nconW = nodes[idN]->nconW;
-  printf("Valor WRITE: %d\n", nodes[idN]->conW[0]);
   if (nconW>0) {
     for(int i=0; i<nconW; i++){
       int length = snprintf( NULL, 0, "%d",  nodes[idN]->conW[i]);
@@ -31,25 +42,7 @@ void writeNode(int id, char buf[128], int r) {
   }
 }
 
-/*void readlnNode(int id, char *buf, int r){
-  int idN = existNode(nodes, id);
-  int nconR = nodes[idN]->nconR;
-  if (nconR>0) {
-    for(int i=0; i<nconR; i++){
-      if (!fork()) {
-        int length = snprintf( NULL, 0, "%d",  nodes[idN]->conR[i]);
-        char *strtmp = malloc (length + 1);
-        snprintf (strtmp, length + 1, "%d", nodes[idN]->conR[i]);
-        int f = open(strtmp, O_RDONLY);
-        readln(f, buf, r);
-      }
-    }
-  }
-  else {
-    readln(0, buf, r);
-  }
-}*/
-
+/* Connect the output of one node to input of another node (or nodes) */
 void connect(int argc, char **argv){
   int l, j, id = atoi(argv[0]), idN = existNode(nodes, id), r=0;
   for(l=1; l<argc; l++) {
@@ -67,6 +60,7 @@ void connect(int argc, char **argv){
   }
 }
 
+/* Disconnect the output of one node to input of another node */
 void disconnect(char *id1, char *id2){
   int i, j, idN1 = existNode(nodes, atoi(id1));// idN2 = existNode(nodes, atoi(id2));
   int ncon1 = nodes[idN1]->nconW;// ncon2 = nodes[idN2]->nconR;
@@ -81,12 +75,14 @@ void disconnect(char *id1, char *id2){
   }
 }
 
+/* Remove connections of one removed node */
 void removeStruct(char *id1, char *id2, char *id3){
   char *arg[2]; arg[0] = id1; arg[1] = id3;
   disconnect(id1, id2);
   connect(2, arg);
 }
 
+/* Remove node */
 void remov(char *id){
   int idN = existNode(nodes, atoi(id)), nconW = nodes[idN]->nconW;
   int j, l, t;// *conW = intdup(nodes[idN]->conW, nconW);
@@ -126,6 +122,7 @@ void remov(char *id){
   }
 }
 
+/* Create one node */
 void node(int argc, char **argv) {
   char *arg[20], buf[128], *idS = argv[0];
   int r, id, i, n, f;
@@ -142,6 +139,8 @@ void node(int argc, char **argv) {
       if(!fork()){
         mkfifo(idS, 0666);
         f = open(idS, O_RDONLY);
+        if (f==-1)
+          perror("Erro na abertura do pipe\n");
         //int fd[2];
         while ((r=(readln(f, buf, 128)))) {
           char buf2[128];
@@ -153,7 +152,6 @@ void node(int argc, char **argv) {
             while(((token = strtok(NULL, " ")) != NULL))
               arg[narg++] = strdup(token);
             removeStruct(arg[0], arg[1], arg[2]);
-            write(1, "REMOVENODE\n", 11);
           }
           else if (!strcmp(cmd, "change")) {
             char *token, *arg[20];
@@ -161,7 +159,6 @@ void node(int argc, char **argv) {
             while(((token = strtok(NULL, " ")) != NULL))
               arg[narg++] = strdup(token);
             changeComponent(nodes, atoi(arg[0]), narg, arg);
-            write(1, "CHANGENODE\n", 11);
           }
           else if (!strcmp(cmd, "disconnect")) {
             char *token, *arg[20];
@@ -169,7 +166,6 @@ void node(int argc, char **argv) {
             while(((token = strtok(NULL, " ")) != NULL))
               arg[narg++] = strdup(token);
             disconnect(arg[0], arg[1]);
-            write(1, "DISCONNECTNODE\n", 15);
           }
           else if (!strcmp(cmd, "connect")) {
             char *token, *arg[20];
@@ -177,7 +173,6 @@ void node(int argc, char **argv) {
             while(((token = strtok(NULL, " ")) != NULL))
               arg[narg++] = strdup(token);
             connect(narg, arg);
-            write(1, "CONNECTNODE\n", 12);
           }
           else {
             int w, fd1[2], fd2[2], idN = existNode(nodes, id);
@@ -202,7 +197,6 @@ void node(int argc, char **argv) {
                 close(fd2[0]);
                 w = readln(0,buf2,PIPE_BUF);
             }
-            printf("DENTRO NODE: %d - PID: %d\n", id, getpid());
             if (w>=r)
               writeNode(id, buf2, w);
           }
@@ -214,6 +208,7 @@ void node(int argc, char **argv) {
   }
 }
 
+/* Inject input to nodes (by stdin or with cat by .txt) */
 void inject (int argc, char **argv) {
   int r, f, file;
   char buf[PIPE_BUF];
@@ -243,6 +238,7 @@ void inject (int argc, char **argv) {
   }
 }
 
+/* This allow us to define a network and use the .txt */
 void rede(int argc, char **argv){
   int r, f = open(argv[0], O_RDONLY), narg, file;
   char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20];
@@ -330,7 +326,6 @@ int main(int argc, char **argv){
       strcat(buf2, "\n");
       write(f, buf2, r+1);
     }
-    printf("PID: %d\n", getpid());
   }
   for(r=0; nodes[r]!=NULL; r++){
     int length = snprintf( NULL, 0, "%d",  nodes[r]->id);
