@@ -1,13 +1,13 @@
-default: main grep cons window spawn filter tee cat
+default: controlador grep const window spawn filter tee cat
 
-run: main
-		./main
+run: controlador
+		./controlador
 
-main: main.o struct.o
-			gcc -o main main.o struct.o
+controlador: controlador.o struct.o
+			gcc -o controlador controlador.o struct.o
 
-main.o: main.c struct.h
-			gcc -c -Wall main.c
+controlador.o: controlador.c struct.h
+			gcc -c -Wall controlador.c
 
 struct.o: struct.c
 			gcc -c -Wall struct.c
@@ -18,11 +18,11 @@ grep: grep.o
 grep.o: grep.c
 			gcc -c -Wall grep.c
 
-cons: cons.o
-			gcc -o cons cons.o
+const: const.o
+			gcc -o const const.o
 
-cons.o: cons.c
-			gcc -c -Wall cons.c
+const.o: const.c
+			gcc -c -Wall const.c
 
 window: window.o
 			gcc -o window window.o
@@ -55,8 +55,8 @@ cat.o: cat.c
 			gcc -c -Wall cat.c
 
 clean:
-			-rm -f main
-			-rm -f main.o
+			-rm -f controlador
+			-rm -f controlador.o
 			-rm -f struct.o
-			-rm -f cons.o grep.o window.o filter.o spawn.o tee.o cat.o
-			-rm -f cons grep window filter spawn tee cat
+			-rm -f const.o grep.o window.o filter.o spawn.o tee.o cat.o
+			-rm -f const grep window filter spawn tee cat

@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-//#include "components.h"
 #include "struct.h"
 
 #define PIPE_BUF 100   /* Maximum length of event */
@@ -52,7 +51,7 @@ void connect(int argc, char **argv){
         break;
       }
     }
-    if(!r) {
+    if(!r && (id != atoi(argv[l]))) {
       nodes[idN]->conW[nodes[idN]->nconW] = atoi(argv[l]);
       nodes[idN]->nconW++;
     }
@@ -237,8 +236,9 @@ void inject (int argc, char **argv) {
 /* This allow us to define a network and use the .txt */
 void rede(int argc, char **argv){
   int r, f = open(argv[0], O_RDONLY), narg, file;
-  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20];
+  char buf[128], buf2[128], *cmd, *del=" ", *token;
   while ((r=(readln(f, buf, 128)))) {
+    char *arg[20];
     strcpy(buf2, buf);
     narg = 0;
     cmd = strtok(buf, del);
@@ -252,17 +252,17 @@ void rede(int argc, char **argv){
       connect(narg, arg);
       file = open(arg[0], O_WRONLY);
       if (file==-1)
-        perror("Erro a abrir o pipe\n");
+        perror("Erro a abrir o pipe na rede - connect\n");
       strcat(buf2, "\n");
-      write(f, buf2, r+1);
+      write(file, buf2, r+1);
     }
     else if (!(strcmp(cmd, "disconnect"))) {
       disconnect(arg[0], arg[1]);
       file = open(arg[0], O_WRONLY);
       if (file==-1)
-        perror("Erro a abrir o pipe\n");
+        perror("Erro a abrir o pipe na rede - disconnect\n");
       strcat(buf2, "\n");
-      write(f, buf2, r+1);
+      write(file, buf2, r+1);
     }
     else if (!(strcmp(cmd, "remove"))) {
       remov(arg[0]);
@@ -271,9 +271,9 @@ void rede(int argc, char **argv){
       changeComponent(nodes, atoi(arg[0]), narg, arg);
       file = open(arg[0], O_WRONLY);
       if (file==-1)
-        perror("Erro a abrir o pipe\n");
+        perror("Erro a abrir o pipe na rede - change\n");
       strcat(buf2, "\n");
-      write(f, buf2, r+1);
+      write(file, buf2, r+1);
     }
   }
   close(f);
@@ -300,7 +300,7 @@ int main(int argc, char **argv){
       connect(narg, arg);
       int f = open(arg[0], O_WRONLY);
       if (f==-1)
-        perror("Erro a abrir o pipe\n");
+        perror("Erro a abrir o pipe na main\n");
       strcat(buf2, "\n");
       write(f, buf2, r+1);
     }
@@ -308,7 +308,7 @@ int main(int argc, char **argv){
       disconnect(arg[0], arg[1]);
       int f = open(arg[0], O_WRONLY);
       if (f==-1)
-        perror("Erro a abrir o pipe\n");
+        perror("Erro a abrir o pipe na main\n");
       strcat(buf2, "\n");
       write(f, buf2, r+1);
     }
@@ -319,7 +319,7 @@ int main(int argc, char **argv){
       changeComponent(nodes, atoi(arg[0]), narg, arg);
       int f = open(arg[0], O_WRONLY);
       if (f==-1)
-        perror("Erro a abrir o pipe\n");
+        perror("Erro a abrir o pipe na main\n");
       strcat(buf2, "\n");
       write(f, buf2, r+1);
     }
@@ -330,8 +330,7 @@ int main(int argc, char **argv){
     snprintf (strtmp, length + 1, "%d", nodes[r]->id);
     int f = open(strtmp, O_WRONLY);
     if (f==-1)
-      perror("Erro a abrir o pipe\n");
-    //write(f, "\n", 1);
+      perror("Erro a abrir o pipe na main\n");
     close(f);
     if(!fork()) {
       execlp("rm", "rm", strtmp, NULL);
