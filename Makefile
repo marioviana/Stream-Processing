@@ -1,4 +1,4 @@
-default: main grep.o cons.o window.o spawn.o filter.o
+default: main grep.o cons.o window.o spawn.o filter.o tee.o cat.o
 
 run: main
 		./main
@@ -27,6 +27,12 @@ spawn.o: spawn.c
 filter.o: filter.c
 			gcc -c -Wall filter.c
 
+tee.o: tee.c
+			gcc -c -Wall tee.c
+
+cat.o: cat.c
+			gcc -c -Wall cat.c
+
 clean:
 			-rm -f main
 			-rm -f main.o
@@ -36,3 +42,5 @@ clean:
 			-rm -f window.o
 			-rm -f filter.o
 			-rm -f spawn.o
+			-rm -r tee.o
+			-rm -r cat.o

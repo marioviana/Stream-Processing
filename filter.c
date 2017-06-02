@@ -37,7 +37,7 @@ void filter(char *value1, char *operation, char *value2) {
       aux[i] = strtok(NULL, ":");
       i++;
     }
-    if(count<(atoi(value1)-1)){
+    if(count<(atoi(value2)-1)){
       write(1, "\n", 1);
     }
     else if(!(strcmp(operation, "="))){

@@ -17,26 +17,17 @@ ssize_t readln(int fld, char *buf, size_t nbyte){
   return i;
 }
 
-/* Tee component */
-void tee(int argc, char **argv) {
-  int r, f[argc], i;
-  for (i=0; i<argc; i++){
-    f[i] = open(argv[i], O_CREAT | O_WRONLY);
-  }
+/* Cat component */
+void cat() {
+  int r;
   char buf[PIPE_BUF];
   while((r=(readln(0, buf, PIPE_BUF)))) {
     strcat(buf, "\n");
-    for (i=0; i<argc; i++){
-      write(f[i], buf, r+1);
-    }
     write(1, buf, r+1);
-  }
-  for (i=0; i<argc; i++){
-    close(f[i]);
   }
 }
 
 int main(int argc, char *argv[]) {
-  tee(argc, argv);
+  cat();
   return 0;
 }
