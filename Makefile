@@ -1,4 +1,4 @@
-default: main grep.o cons.o window.o spawn.o filter.o tee.o cat.o
+default: main grep cons window spawn filter tee cat
 
 run: main
 		./main
@@ -12,23 +12,44 @@ main.o: main.c struct.h
 struct.o: struct.c
 			gcc -c -Wall struct.c
 
+grep: grep.o
+			gcc -o grep grep.o
+
 grep.o: grep.c
 			gcc -c -Wall grep.c
+
+cons: cons.o
+			gcc -o cons cons.o
 
 cons.o: cons.c
 			gcc -c -Wall cons.c
 
+window: window.o
+			gcc -o window window.o
+
 window.o: window.c
 			gcc -c -Wall window.c
+
+spawn: spawn.o
+			gcc -o spawn spawn.o
 
 spawn.o: spawn.c
 			gcc -c -Wall spawn.c
 
+filter: filter.o
+			gcc -o filter filter.o
+
 filter.o: filter.c
 			gcc -c -Wall filter.c
 
+tee: tee.o
+			gcc -o tee tee.o
+
 tee.o: tee.c
 			gcc -c -Wall tee.c
+
+cat: cat.o
+			gcc -o cat cat.o
 
 cat.o: cat.c
 			gcc -c -Wall cat.c
@@ -42,5 +63,12 @@ clean:
 			-rm -f window.o
 			-rm -f filter.o
 			-rm -f spawn.o
-			-rm -r tee.o
-			-rm -r cat.o
+			-rm -f tee.o
+			-rm -f cat.o
+			-rm -f cons
+			-rm -f grep
+			-rm -f window
+			-rm -f filter
+			-rm -f spawn
+			-rm -f tee
+			-rm -f cat
