@@ -51,7 +51,7 @@ void connect(int argc, char **argv){
         break;
       }
     }
-    if(!r && (id != atoi(argv[l]))) {
+    if(!r) {
       nodes[idN]->conW[nodes[idN]->nconW] = atoi(argv[l]);
       nodes[idN]->nconW++;
     }
@@ -61,8 +61,8 @@ void connect(int argc, char **argv){
 
 /* Disconnect the output of one node to input of another node */
 void disconnect(char *id1, char *id2){
-  int i, j, idN1 = existNode(nodes, atoi(id1));// idN2 = existNode(nodes, atoi(id2));
-  int ncon1 = nodes[idN1]->nconW;// ncon2 = nodes[idN2]->nconR;
+  int i, j, idN1 = existNode(nodes, atoi(id1));
+  int ncon1 = nodes[idN1]->nconW;
   for(i=0; i<ncon1; i++){
     if(nodes[idN1]->conW[i]==atoi(id2)) {
       for(j = i; j < ncon1 - 1; j++) {
@@ -112,9 +112,6 @@ void remov(char *id){
     }
   }
   removeNode(nodes, atoi(id));
-  //int file = open(id, O_WRONLY);
-  //write(file, "\n", 1);
-  //close(file); // problems with closing named pipe?
   if(!fork()) {
     execlp("rm", "rm", id, NULL);
     perror("Erro a remover pipe\n");
@@ -133,14 +130,12 @@ void node(int argc, char **argv) {
     for(i=1; i<argc-1; i++)
       arg[i] = strdup(argv[i+1]);
     n = i;
-    //pid_t p = getpid();
     if(!(newNodeList(nodes, id, arg, n))){
       if(!fork()){
         mkfifo(idS, 0666);
         f = open(idS, O_RDONLY);
         if (f==-1)
           perror("Erro na abertura do pipe\n");
-        //int fd[2];
         while ((r=(readln(f, buf, 128)))) {
           char buf2[128];
           strcpy(buf2, buf);
@@ -290,38 +285,58 @@ int main(int argc, char **argv){
     cmd = strtok(buf, del);
     while(((token = strtok(NULL, del)) != NULL))
       arg[narg++] = strdup(token);
-    if (!(strcmp(cmd, "node")))
-      node(narg, arg);
-    else if (!(strcmp(cmd, "inject")))
-      inject(narg, arg);
+    if (!(strcmp(cmd, "node"))) {
+      int idN = existNode(nodes, atoi(arg[0]));
+      if (idN==-1) {
+        node(narg, arg);
+      }
+    }
+    else if (!(strcmp(cmd, "inject"))) {
+      int idN = existNode(nodes, atoi(arg[0]));
+      if (idN!=-1) {
+        inject(narg, arg);
+      }
+    }
     else if (!(strcmp(cmd, "rede")))
       rede(narg, arg);
     else if (!(strcmp(cmd, "connect"))) {
-      connect(narg, arg);
-      int f = open(arg[0], O_WRONLY);
-      if (f==-1)
-        perror("Erro a abrir o pipe na main\n");
-      strcat(buf2, "\n");
-      write(f, buf2, r+1);
+      int idN = existNode(nodes, atoi(arg[0]));
+      if (idN!=-1) {
+        connect(narg, arg);
+        int f = open(arg[0], O_WRONLY);
+        if (f==-1)
+          perror("Erro a abrir o pipe na main\n");
+        strcat(buf2, "\n");
+        write(f, buf2, r+1);
+      }
     }
     else if (!(strcmp(cmd, "disconnect"))) {
-      disconnect(arg[0], arg[1]);
-      int f = open(arg[0], O_WRONLY);
-      if (f==-1)
-        perror("Erro a abrir o pipe na main\n");
-      strcat(buf2, "\n");
-      write(f, buf2, r+1);
+      int idN = existNode(nodes, atoi(arg[0]));
+      if (idN!=-1) {
+        disconnect(arg[0], arg[1]);
+        int f = open(arg[0], O_WRONLY);
+        if (f==-1)
+          perror("Erro a abrir o pipe na main\n");
+        strcat(buf2, "\n");
+        write(f, buf2, r+1);
+      }
     }
     else if (!(strcmp(cmd, "remove"))) {
-      remov(arg[0]);
+      int idN = existNode(nodes, atoi(arg[0]));
+      if (idN!=-1) {
+        remov(arg[0]);
+      }
     }
     else if (!(strcmp(cmd, "change"))) {
-      changeComponent(nodes, atoi(arg[0]), narg, arg);
-      int f = open(arg[0], O_WRONLY);
-      if (f==-1)
-        perror("Erro a abrir o pipe na main\n");
-      strcat(buf2, "\n");
-      write(f, buf2, r+1);
+      int idN = existNode(nodes, atoi(arg[0]));
+      if (idN!=-1) {
+        changeComponent(nodes, atoi(arg[0]), narg, arg);
+        int f = open(arg[0], O_WRONLY);
+        if (f==-1)
+          perror("Erro a abrir o pipe na main\n");
+        strcat(buf2, "\n");
+        write(f, buf2, r+1);
+      }
     }
   }
   for(r=0; nodes[r]!=NULL; r++){

@@ -24,7 +24,6 @@ int newNodeList(struct node **node, int id, char **arg, int n){
     for(j=0; node[j] != NULL; j++){}
     NodeList aux = (NodeList) malloc (sizeof(struct node));
     aux->id = id;
-    //aux->cmd = strdup(cmd);
     for(i=0; i<20; i++){
       aux->args[i] = NULL;
     }
@@ -33,7 +32,6 @@ int newNodeList(struct node **node, int id, char **arg, int n){
     for(i=1; i<n; i++)
       aux->args[i] = strdup(arg[i]);
     aux->nargs = n;
-    //aux->pid = pid;
     for(i=0; i<20; i++)
       aux->conW[i] = 0;
     aux->nconW = 0;
@@ -48,7 +46,6 @@ int newNodeList(struct node **node, int id, char **arg, int n){
 void removeNode(struct node **node, int id){
   int i, j, idN = existNode(node, id);
   for(i = idN; node[i] != NULL && node[i+1] != NULL; i++) {
-    //node[i] = node[i+1];
     node[i]->id = node[i+1]->id;
     node[i]->nargs = node[i+1]->nargs;
     node[i]->nconW = node[i+1]->nconW;

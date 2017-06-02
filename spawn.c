@@ -56,7 +56,7 @@ void spawn(int argc, char **argv){
       }
     }
     argc-=x;
-    int fexec = open("spawn.txt",O_CREAT| O_WRONLY|O_APPEND,0666);
+    int fexec = open("spawn.txt",O_CREAT | O_WRONLY | O_APPEND, 0666);
     if (!fork()) {
       dup2(fexec, 1);
       close(fexec);

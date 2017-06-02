@@ -1,9 +1,9 @@
-node 1 cons 1
+node 1 const 1
 node 2 spawn ls
 node 3 spawn notcommand
 connect 1 2
 connect 2 3
 node 4 filter 1 > 2
 connect 3 4
-node 5 cat 
+node 5 cat
 node 6 tee tee.txt

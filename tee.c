@@ -21,7 +21,7 @@ ssize_t readln(int fld, char *buf, size_t nbyte){
 void tee(int argc, char **argv) {
   int r, f[argc], i;
   for (i=0; i<argc; i++){
-    f[i] = open(argv[i+1], O_CREAT | O_WRONLY);
+    f[i] = open(argv[i+1], O_CREAT | O_WRONLY | O_APPEND,0666);
   }
   char buf[PIPE_BUF];
   while((r=(readln(0, buf, PIPE_BUF)))) {
