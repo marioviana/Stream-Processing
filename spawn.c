@@ -56,9 +56,12 @@ void spawn(int argc, char **argv){
       }
     }
     argc-=x;
+    int fexec = open("spawn.txt",O_CREAT| O_WRONLY|O_APPEND,0666);
     if (!fork()) {
+      dup2(fexec, 1);
+      close(fexec);
       execvp(argv[0], argv);
-      exit(1);
+      _exit(1);
     }
     else {
       int status;

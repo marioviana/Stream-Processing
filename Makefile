@@ -58,17 +58,5 @@ clean:
 			-rm -f main
 			-rm -f main.o
 			-rm -f struct.o
-			-rm -f cons.o
-			-rm -f grep.o
-			-rm -f window.o
-			-rm -f filter.o
-			-rm -f spawn.o
-			-rm -f tee.o
-			-rm -f cat.o
-			-rm -f cons
-			-rm -f grep
-			-rm -f window
-			-rm -f filter
-			-rm -f spawn
-			-rm -f tee
-			-rm -f cat
+			-rm -f cons.o grep.o window.o filter.o spawn.o tee.o cat.o
+			-rm -f cons grep window filter spawn tee cat

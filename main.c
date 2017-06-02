@@ -215,7 +215,7 @@ void inject (int argc, char **argv) {
   f = open(argv[0], O_WRONLY);
   if (f==-1)
     perror("Erro no inject a abrir o pipe\n");
-  if (!strcmp(argv[1], "cat")) {
+  if (argc>1 && (!strcmp(argv[1], "cat"))) {
     file = open(argv[2], O_RDONLY);
     if (file==-1)
       perror("Erro no inject a abrir o ficheiro\n");
@@ -223,16 +223,12 @@ void inject (int argc, char **argv) {
       strcat(buf, "\n");
       write(f, buf, r+1);
     }
-    //close(file);
-    write(1, "Leaving inject...\n", 18);
+    close(file);
   }
   else {
     while ((r=(readln(0, buf, PIPE_BUF)))) {
-      //if(!fork()){
         strcat(buf, "\n");
         write(f, buf, r+1);
-      //  _exit(0);
-      //}
     }
     write(1, "Leaving inject...\n", 18);
   }
@@ -285,9 +281,10 @@ void rede(int argc, char **argv){
 
 int main(int argc, char **argv){
   int r, narg;
-  char buf[128], buf2[128], *cmd, *del=" ", *token, *arg[20];
+  char buf[128], buf2[128], *cmd, *del=" ", *token;
   initNodeList(nodes);
   while((r=(readln(0, buf, 128)))) {
+    char *arg[20];
     strcpy(buf2, buf);
     narg = 0;
     cmd = strtok(buf, del);
